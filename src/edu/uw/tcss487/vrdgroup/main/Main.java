@@ -1,5 +1,7 @@
 package edu.uw.tcss487.vrdgroup.main;
 
+import java.math.BigInteger;
+
 public class Main {
 
     public static void main(String[] args) {
@@ -13,8 +15,9 @@ public class Main {
      * @param x int
      * @return byte[]
      */
-    public static byte[] right_encode(int x) {
+    public static byte[] right_encode(BigInteger x) {
 //        Validity Conditions: 0 ≤ x < 2^2040
+        assert x.compareTo(new BigInteger("0")) >= 0 && x.compareTo(new BigInteger("2").pow(2040)) < 0;
 
 //        1. Let n be the smallest positive integer for which 2^(8n) > x.
 //        2. Let x1, x2,…, xn be the base-256 encoding of x satisfying:
@@ -32,7 +35,7 @@ public class Main {
      * @param x int
      * @return byte[]
      */
-    public static byte[] left_encode(int x) {
+    public static byte[] left_encode(BigInteger x) {
 //        Validity Conditions: 0 ≤ x < 2^2040
 
 //        1. Let n be the smallest positive integer for which 2^(8n) > x.
@@ -74,7 +77,7 @@ public class Main {
         assert w > 0;
 //
 //        1. z = left_encode(w) || X.
-        byte[] wenc = left_encode(w);
+        byte[] wenc = left_encode(BigInteger.valueOf(w));
         //Calculate total bytes needed, include for step 2 and 3
         byte[] z = new byte[w*((wenc.length + X.length + w - 1)/w)];
         //Append X to z
@@ -90,5 +93,46 @@ public class Main {
         }
 //        4. return z.
         return z;
+    }
+
+    /**
+     * Convert an integer to base 64 byte array
+     * @param x
+     * @param length
+     * @return
+     */
+    public static byte[] base256(BigInteger x, int length) {
+        BigInteger xx = x;
+        int i = length - 1;
+        byte[] rs = new byte[length];
+
+        while (xx.compareTo(new BigInteger("0")) > 0) {
+            rs[i--] = xx.mod(new BigInteger("256")).byteValue();
+            xx = xx.divide(new BigInteger("256"));
+        }
+        return rs;
+    }
+
+    /**
+     * Encode 8 an integer and return a byte represent the bit sequence
+     * @param x
+     * @return
+     */
+    public static byte enc8(int x) {
+        assert x>= 0 && x <= 255;
+
+        byte b = 0;
+        //be careful, have to use an integer for mask
+        int mask = 128;
+
+        while (x > 0) {
+            if (x % 2 == 1) {
+                b = (byte) (b | mask);
+            }
+            x = x / 2;
+            mask = (byte) (mask >> 1);
+        }
+
+        return b;
     }
 }
