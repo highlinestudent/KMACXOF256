@@ -7,12 +7,7 @@ public class Main {
     public static void main(String[] args) {
         byte[] ans = left_encode(BigInteger.valueOf(1234567));
         for (int i = 0; i < ans.length; i++) {
-            System.out.println((ans[i]));
-        }
-
-        ans = Main.left_encode(BigInteger.valueOf(1234567));
-        for (int i = 0; i < ans.length; i++) {
-            System.out.println(ans[i]);
+            System.out.println(255 & ans[i]);
         }
     }
 
