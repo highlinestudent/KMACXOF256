@@ -20,6 +20,7 @@ public class Main {
         assert x.compareTo(new BigInteger("0")) >= 0 && x.compareTo(new BigInteger("2").pow(2040)) < 0;
 
 //        1. Let n be the smallest positive integer for which 2^(8n) > x.
+        int n = findNForLeftRightEncode(x);
 //        2. Let x1, x2,…, xn be the base-256 encoding of x satisfying:
 //        x = ∑ 2^(8(n-i))*x_i, for i = 1 to n.
 //        3. Let Oi = enc8(x_i), for i = 1 to n.
@@ -134,5 +135,20 @@ public class Main {
         }
 
         return b;
+    }
+
+    /**
+     * Find n be the smallest positive integer for which 2^(8n) > x
+     * @param x
+     * @return
+     */
+    public static int findNForLeftRightEncode(BigInteger x) {
+        BigInteger xx = x;
+        int n = 0;
+        while(xx.compareTo(BigInteger.valueOf(0)) != 0){
+            n ++;
+            xx = xx.divide(BigInteger.valueOf(256));
+        }
+        return n;
     }
 }

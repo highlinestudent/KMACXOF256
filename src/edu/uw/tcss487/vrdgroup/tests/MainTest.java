@@ -76,4 +76,10 @@ class MainTest {
         Assertions.assertEquals((byte)-128, Main.enc8(1));
         Assertions.assertEquals((byte)64, Main.enc8(2));
     }
+
+    void findNForLeftRightEncode() {
+        Assertions.assertEquals(2, Main.findNForLeftRightEncode(BigInteger.valueOf(1)));
+        Assertions.assertEquals(2, Main.findNForLeftRightEncode(BigInteger.valueOf(256)));
+        Assertions.assertEquals(3, Main.findNForLeftRightEncode(BigInteger.valueOf(202320)));
+    }
 }
