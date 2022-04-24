@@ -16,7 +16,23 @@ public class Main {
      * @return byte[]
      */
     public static byte[] right_encode(BigInteger x) {
-        return null;
+//        Validity Conditions: 0 ≤ x < 2^2040
+        assert x.compareTo(new BigInteger("0")) >= 0 && x.compareTo(new BigInteger("2").pow(2040)) < 0;
+
+//        1. Let n be the smallest positive integer for which 2^(8n) > x.
+        int n = findNForLeftRightEncode(x);
+//        2. Let x1, x2,…, xn be the base-256 encoding of x satisfying:
+//        x = ∑ 2^(8(n-i))*x_i, for i = 1 to n.
+        byte[] x_n = base256(x, n);
+//        3. Let Oi = enc8(x_i), for i = 1 to n.
+        byte[] rs = new byte[n + 1];
+        for (int i = 0; i < x_n.length; i++) {
+            rs[i] = enc8(x_n[i]);
+        }
+//        4. Let On+1 = enc8(n).
+        rs[n] = enc8(n);
+//        5. Return O = O1 || O2 || … || On || On+1.
+        return rs;
     }
 
     /**
@@ -28,15 +44,23 @@ public class Main {
      */
     public static byte[] left_encode(BigInteger x) {
 //        Validity Conditions: 0 ≤ x < 2^2040
+        assert x.compareTo(new BigInteger("0")) >= 0 && x.compareTo(new BigInteger("2").pow(2040)) < 0;
 
 //        1. Let n be the smallest positive integer for which 2^(8n) > x.
+        int n = findNForLeftRightEncode(x);
 //        2. Let x1, x2, …, xn be the base-256 encoding of x satisfying:
 //        x = ∑ 2^(8(n-i))*x_i, for i = 1 to n.
+        byte[] x_n = base256(x, n);
 //        3. Let Oi = enc8(x_i), for i = 1 to n.
+        byte[] rs = new byte[n + 1];
+        for (int i = 0; i < x_n.length; i++) {
+            rs[i + 1] = enc8(x_n[i]);
+        }
 //        4. Let O0 = enc8(n).
+        rs[0] = enc8(n);
 //        5. Return O = O0 || O1 || … || On−1 || On.
 
-        return null;
+        return rs;
     }
 
     /**
@@ -47,10 +71,16 @@ public class Main {
      */
     public static byte[] encode_string(byte[] S) {
 //        Validity Conditions: 0 ≤ len(S) < 2^2040
+        assert BigInteger.valueOf(S.length).compareTo(new BigInteger("0")) >= 0
+                && BigInteger.valueOf(S.length).compareTo(new BigInteger("2").pow(2040)) < 0;
 
 //        1. Return left_encode(len(S)) || S.
+        byte[] leftEncode = left_encode(BigInteger.valueOf(S.length));
+        byte[] rs = new byte[leftEncode.length + S.length];
+        System.arraycopy(leftEncode, 0, rs, 0, leftEncode.length);
+        System.arraycopy(S, 0, rs, leftEncode.length, S.length);
 
-        return null;
+        return rs;
     }
 
     /**
