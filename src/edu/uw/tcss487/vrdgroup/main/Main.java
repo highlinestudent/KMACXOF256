@@ -5,7 +5,15 @@ import java.math.BigInteger;
 public class Main {
 
     public static void main(String[] args) {
-	// write your code here
+        byte[] ans = left_encode(BigInteger.valueOf(1234567));
+        for (int i = 0; i < ans.length; i++) {
+            System.out.println((ans[i]));
+        }
+
+        ans = Main.left_encode(BigInteger.valueOf(1234567));
+        for (int i = 0; i < ans.length; i++) {
+            System.out.println(ans[i]);
+        }
     }
 
     /**
@@ -140,7 +148,9 @@ public class Main {
      * @return
      */
     public static byte enc8(int x) {
-        assert x>= 0 && x <= 255;
+        assert (255 & x) >= 0 && (255 & x) <= 255;
+
+        x = 255 & x;
 
         byte b = 0;
         //be careful, have to use an integer for mask
