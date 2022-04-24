@@ -10,12 +10,13 @@ class MainTest {
 
     @Test
     void right_encode() {
-        Assertions.assertArrayEquals(Main.right_encode(new BigInteger("0")),
+        Assertions.assertArrayEquals(
             //binary: 00000000 1000000
             new byte[]{
                     0,
                     (byte)0x80
-            }
+            },
+            Main.right_encode(new BigInteger("0"))
         );
     }
 
@@ -77,8 +78,10 @@ class MainTest {
         Assertions.assertEquals((byte)64, Main.enc8(2));
     }
 
+    @Test
     void findNForLeftRightEncode() {
-        Assertions.assertEquals(2, Main.findNForLeftRightEncode(BigInteger.valueOf(1)));
+        Assertions.assertEquals(1, Main.findNForLeftRightEncode(BigInteger.valueOf(0)));
+        Assertions.assertEquals(1, Main.findNForLeftRightEncode(BigInteger.valueOf(1)));
         Assertions.assertEquals(2, Main.findNForLeftRightEncode(BigInteger.valueOf(256)));
         Assertions.assertEquals(3, Main.findNForLeftRightEncode(BigInteger.valueOf(202320)));
     }

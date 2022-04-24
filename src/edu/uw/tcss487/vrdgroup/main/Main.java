@@ -16,16 +16,6 @@ public class Main {
      * @return byte[]
      */
     public static byte[] right_encode(BigInteger x) {
-//        Validity Conditions: 0 ≤ x < 2^2040
-        assert x.compareTo(new BigInteger("0")) >= 0 && x.compareTo(new BigInteger("2").pow(2040)) < 0;
-
-//        1. Let n be the smallest positive integer for which 2^(8n) > x.
-        int n = findNForLeftRightEncode(x);
-//        2. Let x1, x2,…, xn be the base-256 encoding of x satisfying:
-//        x = ∑ 2^(8(n-i))*x_i, for i = 1 to n.
-//        3. Let Oi = enc8(x_i), for i = 1 to n.
-//        4. Let On+1 = enc8(n).
-//        5. Return O = O1 || O2 || … || On || On+1.
         return null;
     }
 
@@ -143,6 +133,7 @@ public class Main {
      * @return
      */
     public static int findNForLeftRightEncode(BigInteger x) {
+        if (x.compareTo(BigInteger.valueOf(0)) == 0) return 1;
         BigInteger xx = x;
         int n = 0;
         while(xx.compareTo(BigInteger.valueOf(0)) != 0){
