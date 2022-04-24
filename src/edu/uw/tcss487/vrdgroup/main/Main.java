@@ -71,14 +71,24 @@ public class Main {
      */
     public static byte[] bytepad(byte[] X, int w) {
 //        Validity Conditions: w > 0
+        assert w > 0;
 //
 //        1. z = left_encode(w) || X.
+        byte[] wenc = left_encode(w);
+        //Calculate total bytes needed, include for step 2 and 3
+        byte[] z = new byte[w*((wenc.length + X.length + w - 1)/w)];
+        //Append X to z
+        System.arraycopy(wenc, 0, z, 0, wenc.length);
+        System.arraycopy(X, 0, z, wenc.length, X.length);
 //        2. while len(z) mod 8 ≠ 0:
 //        z = z || 0
 //        3. while (len(z)/8) mod w ≠ 0:
 //        z = z || 00000000
+        //Set the rest to 0, this do step 2 and 3 at the same time
+        for (int i = wenc.length + X.length; i < z.length; i++) {
+            z[i] = (byte)0;
+        }
 //        4. return z.
-
-        return null;
+        return z;
     }
 }
