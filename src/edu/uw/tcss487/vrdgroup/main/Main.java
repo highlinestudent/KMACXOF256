@@ -1,9 +1,14 @@
 package edu.uw.tcss487.vrdgroup.main;
 
+import java.math.BigInteger;
+
 public class Main {
 
     public static void main(String[] args) {
-	// write your code here
+        byte[] ans = left_encode(BigInteger.valueOf(1234567));
+        for (int i = 0; i < ans.length; i++) {
+            System.out.println(255 & ans[i]);
+        }
     }
 
     /**
@@ -13,16 +18,24 @@ public class Main {
      * @param x int
      * @return byte[]
      */
-    public static byte[] right_encode(int x) {
+    public static byte[] right_encode(BigInteger x) {
 //        Validity Conditions: 0 ≤ x < 2^2040
+        assert x.compareTo(new BigInteger("0")) >= 0 && x.compareTo(new BigInteger("2").pow(2040)) < 0;
 
 //        1. Let n be the smallest positive integer for which 2^(8n) > x.
+        int n = findNForLeftRightEncode(x);
 //        2. Let x1, x2,…, xn be the base-256 encoding of x satisfying:
 //        x = ∑ 2^(8(n-i))*x_i, for i = 1 to n.
+        byte[] x_n = base256(x, n);
 //        3. Let Oi = enc8(x_i), for i = 1 to n.
+        byte[] rs = new byte[n + 1];
+        for (int i = 0; i < x_n.length; i++) {
+            rs[i] = enc8(x_n[i]);
+        }
 //        4. Let On+1 = enc8(n).
+        rs[n] = enc8(n);
 //        5. Return O = O1 || O2 || … || On || On+1.
-        return null;
+        return rs;
     }
 
     /**
@@ -32,17 +45,25 @@ public class Main {
      * @param x int
      * @return byte[]
      */
-    public static byte[] left_encode(int x) {
+    public static byte[] left_encode(BigInteger x) {
 //        Validity Conditions: 0 ≤ x < 2^2040
+        assert x.compareTo(new BigInteger("0")) >= 0 && x.compareTo(new BigInteger("2").pow(2040)) < 0;
 
 //        1. Let n be the smallest positive integer for which 2^(8n) > x.
+        int n = findNForLeftRightEncode(x);
 //        2. Let x1, x2, …, xn be the base-256 encoding of x satisfying:
 //        x = ∑ 2^(8(n-i))*x_i, for i = 1 to n.
+        byte[] x_n = base256(x, n);
 //        3. Let Oi = enc8(x_i), for i = 1 to n.
+        byte[] rs = new byte[n + 1];
+        for (int i = 0; i < x_n.length; i++) {
+            rs[i + 1] = enc8(x_n[i]);
+        }
 //        4. Let O0 = enc8(n).
+        rs[0] = enc8(n);
 //        5. Return O = O0 || O1 || … || On−1 || On.
 
-        return null;
+        return rs;
     }
 
     /**
@@ -53,10 +74,16 @@ public class Main {
      */
     public static byte[] encode_string(byte[] S) {
 //        Validity Conditions: 0 ≤ len(S) < 2^2040
+        assert BigInteger.valueOf(S.length).compareTo(new BigInteger("0")) >= 0
+                && BigInteger.valueOf(S.length).compareTo(new BigInteger("2").pow(2040)) < 0;
 
 //        1. Return left_encode(len(S)) || S.
+        byte[] leftEncode = left_encode(BigInteger.valueOf(S.length));
+        byte[] rs = new byte[leftEncode.length + S.length];
+        System.arraycopy(leftEncode, 0, rs, 0, leftEncode.length);
+        System.arraycopy(S, 0, rs, leftEncode.length, S.length);
 
-        return null;
+        return rs;
     }
 
     /**
@@ -71,14 +98,83 @@ public class Main {
      */
     public static byte[] bytepad(byte[] X, int w) {
 //        Validity Conditions: w > 0
+        assert w > 0;
 //
 //        1. z = left_encode(w) || X.
+        byte[] wenc = left_encode(BigInteger.valueOf(w));
+        //Calculate total bytes needed, include for step 2 and 3
+        byte[] z = new byte[w*((wenc.length + X.length + w - 1)/w)];
+        //Append X to z
+        System.arraycopy(wenc, 0, z, 0, wenc.length);
+        System.arraycopy(X, 0, z, wenc.length, X.length);
 //        2. while len(z) mod 8 ≠ 0:
 //        z = z || 0
 //        3. while (len(z)/8) mod w ≠ 0:
 //        z = z || 00000000
+        //Set the rest to 0, this do step 2 and 3 at the same time
+        for (int i = wenc.length + X.length; i < z.length; i++) {
+            z[i] = (byte)0;
+        }
 //        4. return z.
+        return z;
+    }
 
-        return null;
+    /**
+     * Convert an integer to base 64 byte array
+     * @param x
+     * @param length
+     * @return
+     */
+    public static byte[] base256(BigInteger x, int length) {
+        BigInteger xx = x;
+        int i = length - 1;
+        byte[] rs = new byte[length];
+
+        while (xx.compareTo(new BigInteger("0")) > 0) {
+            rs[i--] = xx.mod(new BigInteger("256")).byteValue();
+            xx = xx.divide(new BigInteger("256"));
+        }
+        return rs;
+    }
+
+    /**
+     * Encode 8 an integer and return a byte represent the bit sequence
+     * @param x
+     * @return
+     */
+    public static byte enc8(int x) {
+        assert (255 & x) >= 0 && (255 & x) <= 255;
+
+        x = 255 & x;
+
+        byte b = 0;
+        //be careful, have to use an integer for mask
+        int mask = 128;
+
+        while (x > 0) {
+            if (x % 2 == 1) {
+                b = (byte) (b | mask);
+            }
+            x = x / 2;
+            mask = (byte) (mask >> 1);
+        }
+
+        return b;
+    }
+
+    /**
+     * Find n be the smallest positive integer for which 2^(8n) > x
+     * @param x
+     * @return
+     */
+    public static int findNForLeftRightEncode(BigInteger x) {
+        if (x.compareTo(BigInteger.valueOf(0)) == 0) return 1;
+        BigInteger xx = x;
+        int n = 0;
+        while(xx.compareTo(BigInteger.valueOf(0)) != 0){
+            n ++;
+            xx = xx.divide(BigInteger.valueOf(256));
+        }
+        return n;
     }
 }
