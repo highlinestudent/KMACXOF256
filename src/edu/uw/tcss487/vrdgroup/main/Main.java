@@ -177,4 +177,211 @@ public class Main {
         }
         return n;
     }
+
+    /**
+     * To implement SHA-3 we only care below values from KECCAK permutation
+     */
+    private static int b = 1600;
+    private static int w = 64;
+    private static int l = 6;
+
+    /**
+     * Instead work with string bits, we will work with byte array
+     * To present 1600 bits, we need a byte array with length 200
+     * We also don't use state array A, we will modify directly byte array S
+     * Using the formula: A[x, y, x] = S[w(5y+x)+z]
+     */
+
+    /**
+     * Get bit value at index of bit string, need to convert this index to byte array index and offset of a byte
+     * @param index
+     * @param S
+     * @return byte number 0x01, 0x00 (be careful)
+     */
+    public static byte getBitAt(int index, byte[] S) {
+        //we only work with array has length 200
+        assert S.length == 200;
+        //index must be smaller then 1600
+        assert index < 1600;
+
+        int i = index / 8;
+        int offset = index % 8;
+
+        int mask = 0x01 << (8 - offset);
+
+        return (mask & S[index]) != 0x00 ? (byte)0x01 : (byte)0x00;
+    }
+
+    /**
+     * Get bit from matrix coordinate
+     * @param x
+     * @param y
+     * @param z
+     * @param S
+     * @return
+     */
+    public static byte getBitAt(int x, int y, int z, byte[] S) {
+        //Formula: A[x, y, z] = S[w(5y+x)+z]
+        return getBitAt(w*(5*y+x)+z, S);
+    }
+
+    /**
+     * Set bit value at index of bit string, need to convert this index to byte array index and offset of a byte
+     * @param index
+     * @param S
+     * @param value byte number 0x01, 0x00 (be careful)
+     */
+    public static void setBitAt(int index, byte[] S, byte value) {
+        //we only work with array has length 200
+        assert S.length == 200;
+        //index must be smaller then 1600
+        assert index < 1600;
+
+        int i = index / 8;
+        int offset = index % 8;
+
+        //Turn on bit at index
+        if (value == 0x01) {
+            S[i] = (byte)((0x01 << (8 - offset)) | S[i]);
+        }
+        //Turn off bit at index
+        else {
+            S[i] = (byte)((~(0x01 << (8 - offset))) & S[i]);
+        }
+    }
+
+    /**
+     * Set bit from matrix coordinate
+     * @param x
+     * @param y
+     * @param z
+     * @param S
+     * @param value
+     */
+    public static void setBitAt(int x, int y, int z, byte[] S, byte value) {
+        //Formula: A[x, y, z] = S[w(5y+x)+z]
+        setBitAt(w*(5*y+x)+z, S, value);
+    }
+
+    /**
+     * Implement theta step, we do exactly the description in NIST.FIPS.202
+     * @param S
+     * @return
+     */
+    public static byte[] theta(byte[] S) {
+        byte[][] C = new byte[5][w];
+        byte[][] D = new byte[5][w];
+        byte[] SS = new byte[S.length];
+
+        //Formula: A[x, y, z] = S[w(5y+x)+z]
+
+        //1. For all pairs (x,z) such that 0≤x<5 and 0≤z<w, let
+        //C[x,z]=A[x, 0,z] ⊕ A[x, 1,z] ⊕ A[x, 2,z] ⊕ A[x, 3,z] ⊕ A[x, 4,z].
+        for (int i = 0; i < 5; i++) {
+            for (int j = 0; j < w; j++) {
+                C[i][j] = (byte) (getBitAt(i, 0, j, S)
+                                            ^ getBitAt(i, 1, j, S)
+                                            ^ getBitAt(i, 2, j, S)
+                                            ^ getBitAt(i, 3, j, S)
+                                            ^ getBitAt(i, 4, j, S));
+            }
+        }
+
+        //2. For all pairs (x, z) such that 0≤x<5 and 0≤z<w let
+        //D[x,z]=C[(x1) mod 5, z] ⊕ C[(x+1) mod 5, (z –1) mod w].
+        for (int i = 0; i < 5; i++) {
+            for (int j = 0; j < w; j++) {
+                D[i][j] = (byte) (C[(i-1)%5][j] ^ C[(i+1)%5][(j-1)%w]);
+            }
+        }
+
+        //3. For all triples (x, y, z) such that 0≤x<5, 0≤y<5, and 0≤z<w, let
+        //A′[x, y,z] = A[x, y,z] ⊕ D[x,z].
+        for (int i = 0; i < 5; i++) {
+            for (int j = 0; j < 5; j++) {
+                for (int k = 0; k < w; k++) {
+                    //SS[w*(5*j+i)+k] = (byte) (S[w*(5*j+i)+k] ^ D[i][k]);
+                    setBitAt(i, j, k, SS, (byte) (getBitAt(i, j, k, S) ^ D[i][k]));
+                }
+            }
+        }
+        return SS;
+    }
+
+    /**
+     * Implement the roh step, we do exactly the description in NIST.FIPS.202
+     * @param S
+     * @return
+     */
+    public static byte[] roh(byte[] S) {
+        byte[] SS = new byte[S.length];
+
+        //Formula: A[x, y, z] = S[w(5y+x)+z]
+
+        //1. For all z such that 0≤z<w, let A′ [0, 0,z] = A[0, 0,z]
+        for (int i = 0; i < w; i++) {
+            //SS[w*(5*0+0)+i] = S[w*(5*0+0)+i];
+            setBitAt(0, 0, i, SS, getBitAt(0, 0, i, S));
+        }
+
+        //2. Let (x, y) = (1, 0).
+        int x = 1, y = 0;
+
+        //3. For t from 0 to 23:
+        //a. for all z such that 0≤z<w, let A′[x, y,z] = A[x, y, (z–(t+1)(t+2)/2) mod w];
+        //b. let (x, y) = (y, (2x+3y) mod 5).
+        for (int t = 0; t <= 23; t++) {
+            for (int i = 0; i < w; i++) {
+                //SS[w * (5 * y + x) + i] = S[w*(5*y+x)+((i-(t+1)*(t+2)/2)%w)];
+                setBitAt(x, y, i, SS, getBitAt(x, y, (i-(t+1)*(t+2)/2)%w, S));
+                x = y;
+                y = (2*x+3*y)%5;
+            }
+        }
+        return SS;
+    }
+
+    /**
+     * Implement the pi step, we do exactly the description in NIST.FIPS.202
+     * @param S
+     * @return
+     */
+    public static byte[] pi(byte[] S) {
+        byte[] SS = new byte[S.length];
+
+        //Formula: A[x, y, z] = S[w(5y+x)+z]
+
+        //1. For all triples (x, y, z) such that 0≤x<5, 0≤y<5, and 0≤z<w, let
+        //A′[x, y, z]=A[(x + 3y) mod 5, x, z].
+        for (int i = 0; i < 5; i++) {
+            for (int j = 0; j < 5; j++) {
+                for (int k = 0; k < w; k++) {
+                    setBitAt(i, j, k, SS, getBitAt((i+3*j)%5, i, k, S));
+                }
+            }
+        }
+        return SS;
+    }
+
+    /**
+     * Implement the chi step, we do exactly the description in NIST.FIPS.202
+     * @param S
+     * @return
+     */
+    public static byte[] chi(byte[] S) {
+        byte[] SS = new byte[S.length];
+
+        //Formula: A[x, y, z] = S[w(5y+x)+z]
+
+        //For all triples (x, y, z) such that 0≤x<5, 0≤y<5, and 0≤z<w, let
+        //A′[x, y,z] = A[x, y,z] ⊕ ((A[(x+1) mod 5, y, z] ⊕ 1) ⋅ A[(x+2) mod 5, y, z]).
+        for (int i = 0; i < 5; i++) {
+            for (int j = 0; j < 5; j++) {
+                for (int k = 0; k < w; k++) {
+                    setBitAt(i, j, k, SS, (byte) (getBitAt(i, j, k, S) ^ ((getBitAt((i+1)%5, j, k, S) ^ 0x01) & getBitAt((i+2)%5, j, k, S))));
+                }
+            }
+        }
+        return SS;
+    }
 }
