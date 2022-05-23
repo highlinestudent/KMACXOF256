@@ -207,7 +207,7 @@ public class Main {
         int i = index / 8;
         int offset = index % 8;
 
-        int mask = 0x01 << (8 - offset);
+        int mask = 0x01 << (7 - offset);
 
         return (mask & S[index]) != 0x00 ? (byte)0x01 : (byte)0x00;
     }
@@ -242,11 +242,11 @@ public class Main {
 
         //Turn on bit at index
         if (value == 0x01) {
-            S[i] = (byte)((0x01 << (8 - offset)) | S[i]);
+            S[i] = (byte)((0x01 << (7 - offset)) | S[i]);
         }
         //Turn off bit at index
         else {
-            S[i] = (byte)((~(0x01 << (8 - offset))) & S[i]);
+            S[i] = (byte)((~(0x01 << (7 - offset))) & S[i]);
         }
     }
 
@@ -383,5 +383,173 @@ public class Main {
             }
         }
         return SS;
+    }
+
+    /**
+     * Implement the iota step, we do exactly the description in NIST.FIPS.202
+     * @param S
+     * @param i_r
+     * @return
+     */
+    public  static byte[] iota(byte[] S, int i_r) {
+        byte[] SS = new byte[S.length];
+
+        //1. For all triples (x, y,z) such that 0≤x<5, 0≤y<5, and 0≤z<w, let A′[x, y,z] = A[x, y,z].
+        for (int i = 0; i < S.length; i++) {
+            SS[i] = S[i];
+        }
+        //2. Let RC=0
+        byte[] RC = new byte[w/8];
+        //3. For j from 0 to l, let RC[2^j–1]=rc(j+7*i_r).
+        for (int j = 0; j <= l; j++) {
+            int byteIndex = ((int)Math.pow(2, j))/8;
+            int byteOffset = ((int)Math.pow(2, j))%8;
+            setBitForAByteAt(RC[byteIndex], byteOffset, rc(j + 7*i_r));
+        }
+        //4. For all z such that 0≤z<w, let A′[0, 0,z]=A′[0, 0,z] ⊕ RC[z].
+        for (int z = 0; z < w; z++) {
+            int byteIndex = ((int)z)/8;
+            int byteOffset = ((int)z)%8;
+            setBitAt(0, 0, z, SS, (byte) (getBitAt(0, 0, z, SS) ^ getBitFromAByteAt(RC[byteIndex], byteOffset)));
+        }
+
+        return SS;
+    }
+
+    /**
+     * Round function, we do exactly the description in NIST.FIPS.202
+     * @param S
+     * @param i_r
+     * @return
+     */
+    public static byte[] Rnd(byte[] S, int i_r) {
+        return iota(chi(pi(roh(theta(S)))), i_r);
+    }
+
+    /**
+     * KECCAK-p[b, n_r](S), we fixed b = 1600, so we don't need this parameter in the function
+     * @param n_r
+     * @param S
+     * @return
+     */
+    public static byte[] KECCAK_p(int n_r, byte[] S) {
+        //1. Convert S into a state array, A, as described in Sec. 3.1.2.
+        //Don't need to do above step because we apply the algorithms directly on S
+        //2. For i_r from 12+2l–n_r to 12+2l–1, let A=Rnd(A, i_r)
+        for (int i_r = 12+12*l-n_r; i_r < 12+2*l-1; i_r++) {
+            S = Rnd(S, i_r);
+        }
+        //3. Convert A into a string S′ of length b, as described in Sec. 3.1.3
+        //Don't need to do above step because we apply the algorithms directly on S
+        //4. Return S′
+        return S;
+    }
+
+    /**
+     * Algorithm 9: pad10*1(x, m)
+     * @param x
+     * @param m
+     * @return
+     */
+    public static byte[] pad10_1(int x, int m) {
+        assert x % 8 == 0;
+        assert m % 8 == 0;
+
+        //1. Let j = (– m – 2) mod x.
+        int j = (-m-2) % x;
+
+        assert (j+2)%8 == 0;
+
+        //2. Return P = 1 || 0^j || 1
+        byte[] P = new byte[(j+2)/8];
+        for (int i = 0; i < P.length; i++) {
+            P[i] = 0x00;
+        }
+        setBitForAByteAt(P[0], 0, (byte) 0x01);
+        setBitForAByteAt(P[P.length - 1], 7, (byte) 0x01);
+        return P;
+    }
+
+    /**
+     * Algorithm 5: rc(t)
+     * Input:
+     * integer t.
+     * Output:
+     * bit rc(t).
+     *
+     * @param t
+     * @return a byte represent a bit (be careful)
+     */
+    public static byte rc(int t) {
+        //1. If t mod 255 = 0, return 1.
+        if (t % 255 == 0) return 0x01;
+
+        //2. Let R = 10000000.
+        byte R = (byte)0x80;
+
+        //3. For i from 1 to t mod 255, let:
+        //a. R = 0 || R;
+        //b. R[0] = R[0] ⊕ R[8];
+        //c. R[4] = R[4] ⊕ R[8];
+        //d. R[5] = R[5] ⊕ R[8];
+        //e. R[6] = R[6] ⊕ R[8];
+        //f. R =Trunc8[R].
+        for (int i = 0; i <= t % 255; i++) {
+            //a
+            byte newBit = 0x00;
+            //b
+            newBit = (byte) (newBit ^ (R & 0x01));
+            //c
+            setBitForAByteAt(R, 4, (byte) (getBitFromAByteAt(R, 4) ^ getBitFromAByteAt(R, 7)));
+            //d
+            setBitForAByteAt(R, 5, (byte) (getBitFromAByteAt(R, 5) ^ getBitFromAByteAt(R, 7)));
+            //e
+            setBitForAByteAt(R, 6, (byte) (getBitFromAByteAt(R, 6) ^ getBitFromAByteAt(R, 7)));
+            //f
+            R = (byte) (R >> 1);
+            R = setBitForAByteAt(R, 0, newBit);
+        }
+
+        //4. Return R[0].
+        return getBitFromAByteAt(R, 0);
+    }
+
+    /**
+     * Set bit value at a position for a byte
+     * @param b
+     * @param position from left to right, not right to left (be careful)
+     * @param bitValue
+     * @return
+     */
+    public static byte setBitForAByteAt(byte b, int position, byte bitValue) {
+        assert position < 8;
+
+        byte mask = 0x01;
+        //turn on bit
+        if (bitValue != 0) {
+            b = (byte) (b | (mask << (7 - position)));
+        }
+        //turn off bit
+        else {
+            b = (byte) (b & (~(mask << (7 - position))));
+        }
+        return b;
+    }
+
+    /**
+     * Get bit value at a position from a byte
+     * @param b
+     * @param position from left to right, not right to left (be careful)
+     * @return
+     */
+    public static byte getBitFromAByteAt(byte b, int position) {
+        assert  position < 8;
+
+        byte mask = 0x01;
+
+        if (((mask << (7 - position)) & b) != 0x00) {
+            return 0x01;
+        }
+        return 0x00;
     }
 }
