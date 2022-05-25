@@ -471,6 +471,58 @@ public class Main {
     }
 
     /**
+     * The original function:
+     * Algorithm 8: SPONGE[f, pad, r](N, d), but for Keccak[c]:
+     * we knew f = Keccak-p(1600, 24) or in our code, it is Keccak-p(24)
+     * and pad is pad10*1
+     * @param r
+     * @param N
+     * @param d
+     * @return
+     */
+    public static byte[] SPONGE(int r, byte[] N, int d) {
+        assert r % 8 == 0;
+        assert d % 8 == 0;
+
+        //1. Let P=N || pad(r, len(N)).
+        byte[] padding = pad10_1(r, N.length);
+        byte[] P = new byte[N.length + padding.length];
+        System.arraycopy(N, 0, P, 0, N.length);
+        System.arraycopy(padding, 0, P, N.length, padding.length);
+
+        //2. Let n=len(P)/r.
+        int n = P.length / r;
+
+        //3. Let c=b-r.
+        int c = b - r;
+
+        //4. Let P0, … , P_n-1 be the unique sequence of strings of length r such that P = P0 || … || P_n-1.
+        //do nothing
+
+        //5. Let S=0^b
+        byte[] S = new byte[b/8];
+
+        //6. For i from 0 to n-1, let S=f(S ⊕ (Pi || 0^c))
+        byte[] tmp = new byte[r + c];
+        byte[] zero_c = new byte[c];
+        for (int i = 0; i <= n - 1; i++) {
+            System.arraycopy(P, i*r, tmp, 0, r);
+            System.arraycopy(zero_c, 0, tmp, r, zero_c.length);
+            for (int j = 0; j < tmp.length; j++) {
+                tmp[j] = (byte) (tmp[j] ^ S[j]);
+            }
+            S = KECCAK_p(24, tmp);
+        }
+
+        //7. Let Z be the empty string.
+
+        //8. Let Z=Z || Trunc_r(S).
+        //9. If d≤|Z|, then return Trunc d (Z); else continue.
+        //10. Let S=f(S), and continue with Step 8.
+        return null;
+    }
+
+    /**
      * Algorithm 5: rc(t)
      * Input:
      * integer t.
@@ -551,5 +603,14 @@ public class Main {
             return 0x01;
         }
         return 0x00;
+    }
+
+    public static byte[] trunc(int r, byte[] S) {
+        assert r % 8 == 0;
+        assert r/8 <= S.length;
+
+        byte[] truncS = new byte[r/8];
+        System.arraycopy(S, 0, truncS, 0, r/8);
+        return truncS;
     }
 }
