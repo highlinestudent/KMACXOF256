@@ -2,13 +2,13 @@ package edu.uw.tcss487.vrdgroup.main;
 import java.math.BigInteger;
 
 /**
- * the E521 curve (Edwards curve)
+ * the Elliptic 521 curve (Edwards curve)
  */
-public class E521 {
-
+public class Elliptic521 {
+    /** X-coordinate */
     private BigInteger myX;
+    /** Y-coordinate */
     private BigInteger myY;
-
     /** p parameter */
     private static final BigInteger  p  = (new BigInteger("2").pow(521)).subtract(BigInteger.ONE);
     /** d = =−376014 */
@@ -24,29 +24,24 @@ public class E521 {
      * @param theX x coordinate of point
      * @param theY y coordinate of point
      */
-    public E521(final BigInteger theX, final BigInteger theY) {
+    public Elliptic521(final BigInteger theX, final BigInteger theY) {
         myX = theX;
         myY = theY;
     }
 
-    /** Constructor for neutral element, defined to be point (0, 1) */
-    public E521() {
+    /** Constructor for neutral element (0, 1) */
+    public Elliptic521() {
         myX = BigInteger.ZERO;
         myY = BigInteger.ONE;
     }
 
-
-
-
-
     /**
-     * Constructor for point with only X provided. Solves for Y.
+     * Constructor for a given x
      * @param theX int value which is desired X coordinate of point. Y is generated
      * from X using sqrt method.
      */
-    public E521(final BigInteger theX, boolean theLSB) {
+    public Elliptic521(final BigInteger theX, boolean theLSB) {
         myX = theX;
-        //solve for y
         BigInteger num = (BigInteger.ONE.subtract(theX.pow(2))).mod(p);
         BigInteger denom = BigInteger.ONE.add(new BigInteger("376014").multiply(theX.pow(2))).mod(p);
         denom = denom.modInverse(p);
@@ -56,25 +51,21 @@ public class E521 {
 
     /**
      * Gets current X value.
-     * @return BigInteger which is current X coordinate of point.
+     * @return X value
      */
-    public BigInteger getX() {
-        return myX;
-    }
-
+    public BigInteger getX() {return myX;}
+    /**
+     * Gets current Y value.
+     * @return Y value
+     */
+    public BigInteger getY() { return myY; }
     /** Set X coordinate. */
     public void setX(final BigInteger theX) {myX = theX;}
     /** Set Y coordinate. */
     public void setY(final BigInteger theY) {myY = theY;}
 
-    /**
-     * Gets current Y value.
-     * @return BigInteger which is current Y coordinate of point.
-     */
-    public BigInteger getY() { return myY; }
-
     /** Returns r value for curve.
-     * @return r value for curve. */
+     * @return r value. */
     public BigInteger getR() { return R; }
 
     /**
@@ -103,9 +94,21 @@ public class E521 {
      * Gets the opposite value of a point
      * @return the opposite value of the given point.
      */
-    public E521 getOpposite() {
+    public Elliptic521 getOpposite() {
 
-        return new E521(myX.negate(), this.getY());
+        return new Elliptic521(myX.negate(), this.getY());
+    }
+
+    /**
+     * Compares two points for equality by X and Y coordinates.
+     * Utilizes .equals method of BigInteger class.
+     *
+     * @param theOther Curve.E521 point to be compared against this object.
+     * @return boolean, true for equal, else otherwise.
+     */
+    public boolean equals(final Elliptic521 theOther) {
+        return this.getX().equals(theOther.getX())
+                && this.getY().equals(theOther.getY());
     }
 
     /**
@@ -113,7 +116,7 @@ public class E521 {
      * @param theOther the point is added
      * @return a point that sum of 2 given points
      */
-    public E521 add(final E521 theOther) {
+    public Elliptic521 add(final Elliptic521 theOther) {
         BigInteger x1 = this.getX();
         BigInteger x2 = theOther.getX();
 
@@ -132,7 +135,7 @@ public class E521 {
         yDenom = yDenom.modInverse(p);
         BigInteger newY = yNum.multiply(yDenom).mod(p);
 
-        return new E521(newX, newY);
+        return new Elliptic521(newX, newY);
     }
 
     /**
@@ -140,14 +143,13 @@ public class E521 {
      * @param k is number of times to add P to itself.
      * @param P is the point to multiply.
      */
-    public E521 multiply(final BigInteger k, final E521 P) {
-        E521 mulP = new E521(BigInteger.ZERO, BigInteger.ONE);
+    public static Elliptic521 multiply(final BigInteger k, final Elliptic521 P) {
+        Elliptic521 mulP = new Elliptic521(BigInteger.ZERO, BigInteger.ONE);
         for(int i = 0; i < k.intValue(); i ++) {
             mulP = mulP.add(P);
         }
         return mulP;
     }
-
 
 
     /**

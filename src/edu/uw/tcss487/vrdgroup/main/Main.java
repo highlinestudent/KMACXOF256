@@ -1,5 +1,7 @@
 package edu.uw.tcss487.vrdgroup.main;
 
+import edu.uw.tcss487.vrdgroup.tests.TestElliptic521;
+
 import java.math.BigInteger;
 
 public class Main {
@@ -9,6 +11,8 @@ public class Main {
         for (int i = 0; i < ans.length; i++) {
             System.out.println(255 & ans[i]);
         }
+
+        TestElliptic521 test = new TestElliptic521();
     }
 
     /**
