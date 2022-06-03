@@ -8,6 +8,11 @@ import org.junit.jupiter.api.Assertions;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+/**
+ * @author Duy Vu
+ * @version 0.0001
+ * Signature feature functions
+ */
 public class Signature {
 
     /**
@@ -26,6 +31,25 @@ public class Signature {
     }
 
     /**
+     * Sign a message m using private key s
+     * @param m
+     * @param s
+     * @return
+     */
+    public static Utils.Signature sign(byte[] m, BigInteger s) {
+        SecureRandom rand = new SecureRandom();
+        byte[] kk = new byte[512/4];
+        rand.nextBytes(kk);
+
+        BigInteger k = Utils.bitsArrayToBigInteger(Utils.byteArrayToBitArray(kk)).multiply(BigInteger.valueOf(4));
+        EdwardsPoint U = EllipticCrypto.G.multiply(k);
+        BigInteger h = Utils.bitsArrayToBigInteger(Utils.byteArrayToBitArray(SHA3.KMACXOF256(U.x.toByteArray(), m, 512, "T".getBytes())));
+        BigInteger z = k.subtract(h.multiply(s)).mod(EdwardsPoint.R);
+
+        return new Utils.Signature(h, z);
+    }
+
+    /**
      * Verify signature for a byte array m under the public key V
      * @param m
      * @param V
@@ -33,6 +57,6 @@ public class Signature {
      */
     public static boolean verifySignature(Utils.Signature sig, byte[] m, EdwardsPoint V) {
         EdwardsPoint U = EllipticCrypto.G.multiply(sig.z).add(V.multiply(sig.h));
-        return Utils.byteArrayToBitArray(SHA3.KMACXOF256(U.x.toByteArray(), m, 512, "T".getBytes())).equals(sig.h);
+        return Utils.bitsArrayToBigInteger(Utils.byteArrayToBitArray(SHA3.KMACXOF256(U.x.toByteArray(), m, 512, "T".getBytes()))).equals(sig.h);
     }
 }

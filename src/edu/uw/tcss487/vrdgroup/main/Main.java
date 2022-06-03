@@ -5,10 +5,12 @@ import edu.uw.tcss487.vrdgroup.main.features.Hash;
 import edu.uw.tcss487.vrdgroup.main.features.Signature;
 import edu.uw.tcss487.vrdgroup.main.features.SymmetricCrypto;
 
+import java.math.BigInteger;
 import java.util.Scanner;
 
 /**
  * @author Vu Nguyen
+ * @version 0.0001
  * Main application
  */
 public class Main {
@@ -44,9 +46,10 @@ public class Main {
             System.out.println("7. Encrypt a data file under a given elliptic public key file.");
             System.out.println("8. Decrypt a given elliptic-encrypted file from a given password.");
             System.out.println("9. Encrypt/(not decrypt) text input by the user directly to the app instead of having to be read from a file.");
-            System.out.println("10. Sign a given file from a given password and write the signature to a file.");
+            System.out.println("10. Sign a given file from a given password (should use the password when generate keys) and write the signature to a file.");
             System.out.println("11. Verify a given data file and its signature file under a given public key file.");
             System.out.println("12. Encrypting a file under the recipient’s public key and also signing it under the user’s own private key.");
+            System.out.println("0. Exit");
 
             select = sc.nextInt();
             boolean cont = false;
@@ -83,7 +86,10 @@ public class Main {
                         cont = generateSignature();
                         break;
                     case 11:
-                        cont = vefifySig();
+                        cont = verifySig();
+                        break;
+                    case 12:
+                        cont = encryptAndGenerateSignatureUsingPublicPrivateKey();
                         break;
                     default:
                         cont = false;
@@ -234,9 +240,11 @@ public class Main {
 
         Utils.writeObject("V", keyPair.V);
         System.out.println("I saved the public key into a file named: V");
+        Utils.writeObject("s", keyPair.s);
+        System.out.println("I saved the private key into a file named: s");
         Utils.SymmetricCryptogram cryptogram = SymmetricCrypto.encryptSymmetrically(keyPair.s.toByteArray(), pw.getBytes());
-        Utils.writeObject("s", cryptogram);
-        System.out.println("I saved the encrypted private key into a file named: s");
+        Utils.writeObject("s_encrypted", cryptogram);
+        System.out.println("I saved the encrypted private key into a file named: s_encrypted");
 
         System.out.print("Do you want to continue? y/n ");
         return "y".equals(sc.next().toLowerCase());
@@ -396,8 +404,8 @@ public class Main {
      * Verify signature and data file using a public key
      * @return
      */
-    public static boolean vefifySig() {
-        System.out.print("Please enter the file path to verify (data.txt): ");
+    public static boolean verifySig() {
+        System.out.print("Please enter the file path to verify (data.txt or elg): ");
         String filePath = sc.next();
         if (filePath.isEmpty()) {
             filePath = "data.txt";
@@ -417,6 +425,43 @@ public class Main {
             System.out.println("The file and its signature match.");
         } else {
             System.out.println("The file and its signature don't match.");
+        }
+
+        System.out.print("Do you want to continue? y/n ");
+        return "y".equals(sc.next().toLowerCase());
+    }
+
+    /**
+     * Verify signature and data file using a public key
+     * @return
+     */
+    public static boolean encryptAndGenerateSignatureUsingPublicPrivateKey() {
+        System.out.print("Please enter the file path to encrypt (data.txt): ");
+        String filePath = sc.next();
+        if (filePath.isEmpty()) {
+            filePath = "data.txt";
+        }
+        System.out.print("Please enter the the file path of the public key: ");
+        String publicKeyFilePath = sc.next();
+
+        System.out.print("Please enter the the file path of the private key: ");
+        String privateKeyFilePath = sc.next();
+
+        byte[] m = Utils.readFile(filePath);
+        EdwardsPoint V = (EdwardsPoint) Utils.readObject(publicKeyFilePath);
+        BigInteger s = (BigInteger) Utils.readObject(privateKeyFilePath);
+
+        Utils.EllipticCryptogram elg = EllipticCrypto.ellipticEncrypt(m, V);
+        boolean saved = Utils.writeObject("elg", elg);
+
+        Utils.Signature sig = Signature.sign(Utils.readFile("elg"), s);
+        saved &= Utils.writeObject("sig", sig);
+
+        if (saved) {
+            System.out.println("I saved the symmetric cryptogram: (Z, c, t) into file named elg");
+            System.out.println("I saved the signature into a file named: sig");
+        } else {
+            System.out.println("Something wrong, I could not save the encrypted file or the signature");
         }
 
         System.out.print("Do you want to continue? y/n ");

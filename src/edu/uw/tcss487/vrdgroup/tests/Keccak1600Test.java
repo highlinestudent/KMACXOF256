@@ -1,13 +1,16 @@
 package edu.uw.tcss487.vrdgroup.tests;
 
 import edu.uw.tcss487.vrdgroup.main.Keccak1600;
-import edu.uw.tcss487.vrdgroup.main.SHA3;
 import edu.uw.tcss487.vrdgroup.main.Utils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Random;
 
+/**
+ * @author Vu Nguyen
+ * Unit tests for Keccak1600
+ */
 public class Keccak1600Test {
     @Test
     void theta() {

@@ -24,25 +24,8 @@ public class Keccak1600 {
      * @return
      */
     public static byte[][][] theta(byte[][][] A) {
-        //printBytes(S, "Before Theta");
-
-        //printState(A, "init state");
-
         byte[][] C = new byte[5][w];
         byte[][] D = new byte[5][w];
-
-//        for (int x = 0; x < 5; x++) {
-//            for (int y = 0; y < 5; y++) {
-//                printBits(A[x][y], "lane " + x + " " + y);
-//            }
-//        }
-
-//        for (int x = 0; x < 5; x ++) {
-//            for (int y = 0; y < 5; y++) {
-//                printBits(A[x][y], "lane " + x + " " + y);
-//            }
-//        }
-
 
         //Formula: A[x, y, z] = S[w(5y+x)+z]
 
@@ -51,15 +34,8 @@ public class Keccak1600 {
         for (int x = 0; x < 5; x++) {
             for (int z = 0; z < w; z++) {
                 C[x][z] = (byte) (A[x][0][z] ^ A[x][1][z] ^ A[x][2][z] ^ A[x][3][z] ^ A[x][4][z]);
-                //System.out.println(C[x][z] + " = " + A[x][0][z] + " ^ " + A[x][1][z] + " ^ " + A[x][2][z] + " ^ " + A[x][3][z] + " ^ " + A[x][4][z]);
-//                C[x][z] = (byte) (A[xy_map[x]][xy_map[0]][z]
-//                                                ^ A[xy_map[x]][xy_map[1]][z]
-//                                                ^ A[xy_map[x]][xy_map[2]][z]
-//                                                ^ A[xy_map[x]][xy_map[3]][z]
-//                                                ^ A[xy_map[x]][xy_map[4]][z]);
             }
 
-            //printBits(C[x], "Xor C: " + x + " ");
         }
 
         //2. For all pairs (x, z) such that 0≤x<5 and 0≤z<w let
@@ -67,9 +43,7 @@ public class Keccak1600 {
         for (int x = 0; x < 5; x++) {
             for (int z = 0; z < w; z++) {
                 D[x][z] = (byte) (C[Utils.floorMod(x-1, 5)][z] ^ C[(x+1)%5][Utils.floorMod(z-1, w)]);
-                //D[xy_map[x]][z] = (byte) (C[xy_map[floorMod(x-1, 5)]][z] ^ C[xy_map[(x+1)%5]][floorMod(z-1, w)]);
             }
-            //printBits(D[x], "Xor D: " + x + " ");
         }
 
         //3. For all triples (x, y, z) such that 0≤x<5, 0≤y<5, and 0≤z<w, let
@@ -79,9 +53,7 @@ public class Keccak1600 {
             for (int y = 0; y < 5; y++) {
                 for (int z = 0; z < w; z++) {
                     AA[x][y][z] = (byte) (A[x][y][z] ^ D[x][z]);
-                    //AA[xy_map[x]][xy_map[y]][z] = (byte) (A[xy_map[x]][xy_map[y]][z] ^ D[x][z]);
                 }
-                //printBits(AA[x][y], "lane " + x + " " + y);
             }
         }
 

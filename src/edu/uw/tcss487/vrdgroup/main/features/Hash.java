@@ -3,10 +3,8 @@ package edu.uw.tcss487.vrdgroup.main.features;
 import edu.uw.tcss487.vrdgroup.main.SHA3;
 import edu.uw.tcss487.vrdgroup.main.Utils;
 
-import java.util.Scanner;
-
 /**
- * @author Vu Nguyen
+ * @author Duy Vu
  * @version 0.0001
  * All hash features
  */

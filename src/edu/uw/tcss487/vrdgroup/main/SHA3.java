@@ -4,6 +4,7 @@ import java.math.BigInteger;
 
 /**
  * @author Vu Nguyen
+ * @version 0.0001
  * This class contains all method required for KMACXOF256
  */
 public class SHA3 {

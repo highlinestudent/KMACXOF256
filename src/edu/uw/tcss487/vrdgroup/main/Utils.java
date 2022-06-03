@@ -7,7 +7,8 @@ import java.util.List;
 import java.util.Scanner;
 
 /**
- * @author Vu Nguyen
+ * @author Duy Vu
+ * @version 0.0001
  * All utils methods
  */
 public class Utils {

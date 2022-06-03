@@ -5,6 +5,10 @@ import edu.uw.tcss487.vrdgroup.main.Utils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+/**
+ * @author Duy Vu
+ * Unit tests for util functions
+ */
 public class UtilsTest {
 
     @Test

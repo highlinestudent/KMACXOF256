@@ -7,6 +7,10 @@ import org.junit.jupiter.api.Test;
 import java.math.BigInteger;
 import java.util.Random;
 
+/**
+ * @author Rin Pham
+ * Unit tests for elliptic curve
+ */
 class EdwardsPointTest {
 
     @Test

@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.math.BigInteger;
 
 /**
- * @author Vu Nguyen
+ * @author Rin Pham
  * @version 0.0001
  * Implementation E521 Elliptic curve
  */
